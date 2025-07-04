@@ -1,35 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <title>Arrow Game</title>
+  <meta charset="UTF-8">
+  <title>Arrow Game - Vydra</title>
   <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #eef;
+    }
+
     #character {
-      width: 50px;
-      height: 50px;
-      background: red;
+      width: 62px;
+      height: 62px;
       position: absolute;
       top: 100px;
       left: 100px;
+      image-rendering: pixelated;
+      pointer-events: none;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
-  <div id="character"></div>
+
+  <!-- Nhân vật Vydra -->
+  <img id="character" src="Vydra/Idle/Idle00.png" alt="Vydra" />
 
   <script>
     const character = document.getElementById('character');
+    const frameSize = 62;
+
     let pos = { top: 100, left: 100 };
+    let direction = 'Down'; // Mặc định
+    let moveFrame = 0;
+    let idleFrame = 0;
+    let isMoving = false;
+    let state = 'idle'; // idle | walk | run
+
+    // Map phím mũi tên -> hướng di chuyển
+    const keyToVector = {
+      'ArrowUp':    { dx: 0, dy: -1, dir: 'U' },
+      'ArrowDown':  { dx: 0, dy: 1, dir: ''  },
+      'ArrowLeft':  { dx: -1, dy: 0, dir: 'L' },
+      'ArrowRight': { dx: 1, dy: 0, dir: 'R' }
+    };
+
+    function updateSprite() {
+      const folder = state.charAt(0).toUpperCase() + state.slice(1); // Idle, Walk, Run
+      const baseName = folder + direction;
+      let frameStr;
+
+      if (state === 'run') {
+        frameStr = `${moveFrame % 8}`;
+      } else {
+        frameStr = (state === 'idle' ? idleFrame : moveFrame % 16).toString().padStart(2, '0');
+      }
+
+      character.src = `Vydra/${folder}/${baseName}${frameStr}.png`;
+    }
+
+    function moveCharacter(dx, dy, newState, newDirection) {
+      if (isMoving) return;
+      isMoving = true;
+      state = newState;
+      direction = newDirection;
+      moveFrame = 0;
+
+      const steps = (newState === 'run') ? 8 : 16;
+      const speed = (newState === 'run') ? 25 : 50;
+
+      const stepX = (dx * frameSize) / steps;
+      const stepY = (dy * frameSize) / steps;
+
+      let currentStep = 0;
+
+      function step() {
+        if (currentStep >= steps) {
+          isMoving = false;
+          state = 'idle';
+          updateSprite();
+          return;
+        }
+
+        pos.left += stepX;
+        pos.top += stepY;
+        character.style.left = pos.left + 'px';
+        character.style.top = pos.top + 'px';
+
+        moveFrame++;
+        updateSprite();
+        currentStep++;
+
+        setTimeout(step, speed);
+      }
+
+      step();
+    }
+
+    // Xử lý idle loop
+    setInterval(() => {
+      if (!isMoving && state === 'idle') {
+        idleFrame = (idleFrame + 1) % 16;
+        updateSprite();
+      }
+    }, 200);
 
     window.addEventListener('keydown', function(e) {
-      switch (e.key) {
-        case 'ArrowUp':    pos.top -= 10; e.preventDefault(); break;
-        case 'ArrowDown':  pos.top += 10; e.preventDefault(); break;
-        case 'ArrowLeft':  pos.left -= 10; e.preventDefault(); break;
-        case 'ArrowRight': pos.left += 10; e.preventDefault(); break;
-      }
-      character.style.top = pos.top + 'px';
-      character.style.left = pos.left + 'px';
+      if (!(e.key in keyToVector)) return;
+
+      const { dx, dy, dir } = keyToVector[e.key];
+      const isShift = e.shiftKey;
+      e.preventDefault();
+
+      const nextState = isShift ? 'run' : 'walk';
+      moveCharacter(dx, dy, nextState, dir);
     });
+
+    updateSprite(); // ban đầu
   </script>
 </body>
 </html>
