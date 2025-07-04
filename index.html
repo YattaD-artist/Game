@@ -27,7 +27,9 @@
   <img id="character" src="Vydra/Idle/Idle00.png" alt="Vydra" />
 
  <script>
-  const character = document.getElementById('character');
+  let moveInterrupt = false;
+  
+   const character = document.getElementById('character');
   const frameSize = 62;
   let pos = { top: 100, left: 100 };
   let direction = '';
