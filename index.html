@@ -10,6 +10,20 @@
       background-color: #eef;
     }
 
+    /* NỀN PIXEL GRID */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('Game/Dat.png');
+      background-size: 98px 98px;
+      opacity: 0.3;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     #character {
       width: 62px;
       height: 62px;
@@ -24,6 +38,10 @@
 </head>
 <body>
 
+  <!-- Nền được thêm -->
+  <div class="background"></div>
+
+  <!-- Nhân vật -->
   <img id="character" src="Vydra/Idle/Idle00.png" alt="Vydra" />
 
 <script>
@@ -39,7 +57,7 @@
   const keysHeld = new Set();
 
   const speedPerFrame = {
-    walk: 2, // pixel/frame
+    walk: 2,
     run: 4
   };
 
@@ -88,7 +106,6 @@
     character.src = `Vydra/${folder}/${baseName}${frameStr}.png`;
   };
 
-  // Update loop
   let lastFrameTime = 0;
   let animTimer = 0;
 
@@ -100,7 +117,6 @@
     let moved = false;
     let dx = 0, dy = 0;
 
-    // Xác định hướng đang giữ
     for (let key of keysHeld) {
       if (keyToVector[key]) {
         const vec = keyToVector[key];
@@ -109,7 +125,7 @@
         direction = vec.dir;
         lastDirection = direction;
         moved = true;
-        break; // Ưu tiên 1 phím duy nhất nếu giữ nhiều
+        break;
       }
     }
 
@@ -141,10 +157,7 @@
   };
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-      spacePressed = true;
-    }
-
+    if (e.code === 'Space') spacePressed = true;
     if (keyToVector[e.key]) {
       keysHeld.add(e.key);
       e.preventDefault();
@@ -152,10 +165,7 @@
   });
 
   window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-      spacePressed = false;
-    }
-
+    if (e.code === 'Space') spacePressed = false;
     if (keyToVector[e.key]) {
       keysHeld.delete(e.key);
       e.preventDefault();
