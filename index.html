@@ -26,118 +26,129 @@
 
   <img id="character" src="Vydra/Idle/Idle00.png" alt="Vydra" />
 
-  <script>
-    const character = document.getElementById('character');
-    const frameSize = 62;
-    let pos = { top: 100, left: 100 };
-    let direction = ''; // "", U, L, R
-    let moveFrame = 0;
-    let idleFrame = 0;
-    let isMoving = false;
-    let state = 'idle';
+ <script>
+  const character = document.getElementById('character');
+  const frameSize = 62;
+  let pos = { top: 100, left: 100 };
+  let direction = '';
+  let moveFrame = 0;
+  let idleFrame = 0;
+  let isMoving = false;
+  let state = 'idle';
+  let spacePressed = false; // 👈 Thêm cờ kiểm tra dấu cách
 
-    const keyToVector = {
-      'ArrowUp':    { dx: 0, dy: -1, dir: 'U' },
-      'ArrowDown':  { dx: 0, dy: 1, dir: '' },
-      'ArrowLeft':  { dx: -1, dy: 0, dir: 'L' },
-      'ArrowRight': { dx: 1, dy: 0, dir: 'R' }
-    };
+  const keyToVector = {
+    'ArrowUp':    { dx: 0, dy: -1, dir: 'U' },
+    'ArrowDown':  { dx: 0, dy: 1, dir: '' },
+    'ArrowLeft':  { dx: -1, dy: 0, dir: 'L' },
+    'ArrowRight': { dx: 1, dy: 0, dir: 'R' }
+  };
 
-    // Preload tất cả ảnh
-    const preloadImages = (callback) => {
-      const folders = { Idle: 16, Walk: 16, Run: 8 };
-      const directions = ['', 'U', 'L', 'R'];
-      let loaded = 0;
-      let total = 0;
+  const preloadImages = (callback) => {
+    const folders = { Idle: 16, Walk: 16, Run: 8 };
+    const directions = ['', 'U', 'L', 'R'];
+    let loaded = 0;
+    let total = 0;
 
-      for (const folder in folders) {
-        for (const dir of directions) {
-          const count = folders[folder];
-          for (let i = 0; i < count; i++) {
-            const frameStr = folder === 'Run' ? `${i}` : `${i.toString().padStart(2, '0')}`;
-            const src = `Vydra/${folder}/${folder}${dir}${frameStr}.png`;
-            const img = new Image();
-            img.src = src;
-            img.onload = img.onerror = () => {
-              loaded++;
-              if (loaded === total) callback();
-            };
-            total++;
-          }
+    for (const folder in folders) {
+      for (const dir of directions) {
+        const count = folders[folder];
+        for (let i = 0; i < count; i++) {
+          const frameStr = folder === 'Run' ? `${i}` : `${i.toString().padStart(2, '0')}`;
+          const src = `Vydra/${folder}/${folder}${dir}${frameStr}.png`;
+          const img = new Image();
+          img.src = src;
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded === total) callback();
+          };
+          total++;
         }
       }
-    };
+    }
+  };
 
-    const updateSprite = () => {
-      const folder = state.charAt(0).toUpperCase() + state.slice(1);
-      const baseName = folder + direction;
-      const frameStr = (state === 'run') ? `${moveFrame % 8}` :
-                       (state === 'idle' ? idleFrame : moveFrame % 16).toString().padStart(2, '0');
-      character.src = `Vydra/${folder}/${baseName}${frameStr}.png`;
-    };
+  const updateSprite = () => {
+    const folder = state.charAt(0).toUpperCase() + state.slice(1);
+    const baseName = folder + direction;
+    const frameStr = (state === 'run') ? `${moveFrame % 8}` :
+                     (state === 'idle' ? idleFrame : moveFrame % 16).toString().padStart(2, '0');
+    character.src = `Vydra/${folder}/${baseName}${frameStr}.png`;
+  };
 
-    const moveCharacter = (dx, dy, newState, newDirection) => {
-      if (isMoving) return;
-      isMoving = true;
-      state = newState;
-      direction = newDirection;
-      moveFrame = 0;
+  const moveCharacter = (dx, dy, newState, newDirection) => {
+    if (isMoving) return;
+    isMoving = true;
+    state = newState;
+    direction = newDirection;
+    moveFrame = 0;
 
-      const steps = (newState === 'run') ? 8 : 16;
-      const speed = (newState === 'run') ? 25 : 50;
-      const stepX = (dx * frameSize) / steps;
-      const stepY = (dy * frameSize) / steps;
+    const steps = (newState === 'run') ? 8 : 16;
+    const speed = (newState === 'run') ? 25 : 50;
+    const stepX = (dx * frameSize) / steps;
+    const stepY = (dy * frameSize) / steps;
 
-      let currentStep = 0;
+    let currentStep = 0;
 
-      const step = () => {
-        if (currentStep >= steps) {
-          isMoving = false;
-          state = 'idle';
-          updateSprite();
-          return;
-        }
-        pos.left += stepX;
-        pos.top += stepY;
-        character.style.left = pos.left + 'px';
-        character.style.top = pos.top + 'px';
-        moveFrame++;
+    const step = () => {
+      if (currentStep >= steps) {
+        isMoving = false;
+        state = 'idle';
         updateSprite();
-        currentStep++;
-        setTimeout(step, speed);
-      };
-
-      step();
-    };
-
-    let idleInterval;
-    const startIdleLoop = () => {
-      idleInterval = setInterval(() => {
-        if (!isMoving && state === 'idle') {
-          idleFrame = (idleFrame + 1) % 16;
-          updateSprite();
-        }
-      }, 200);
-    };
-
-    window.addEventListener('keydown', function(e) {
-      if (!(e.key in keyToVector)) return;
-      e.preventDefault();
-
-      const { dx, dy, dir } = keyToVector[e.key];
-      const isShift = e.shiftKey;
-      const mode = isShift ? 'run' : 'walk';
-      moveCharacter(dx, dy, mode, dir);
-    });
-
-    // === BẮT ĐẦU ===
-    character.style.left = pos.left + 'px';
-    character.style.top = pos.top + 'px';
-
-    preloadImages(() => {
+        return;
+      }
+      pos.left += stepX;
+      pos.top += stepY;
+      character.style.left = pos.left + 'px';
+      character.style.top = pos.top + 'px';
+      moveFrame++;
       updateSprite();
-      startIdleLoop();
-    });
-  </script>
+      currentStep++;
+      setTimeout(step, speed);
+    };
+
+    step();
+  };
+
+  let idleInterval;
+  const startIdleLoop = () => {
+    idleInterval = setInterval(() => {
+      if (!isMoving && state === 'idle') {
+        idleFrame = (idleFrame + 1) % 16;
+        updateSprite();
+      }
+    }, 200);
+  };
+
+  // 👇 Ghi nhận khi Space được nhấn giữ
+  window.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') {
+      spacePressed = true;
+    }
+
+    if (!(e.key in keyToVector)) return;
+    e.preventDefault();
+
+    const { dx, dy, dir } = keyToVector[e.key];
+    const mode = spacePressed ? 'run' : 'walk'; // 👈 sử dụng Space thay vì Shift
+    moveCharacter(dx, dy, mode, dir);
+  });
+
+  // 👇 Xóa trạng thái Space khi thả phím
+  window.addEventListener('keyup', function(e) {
+    if (e.code === 'Space') {
+      spacePressed = false;
+    }
+  });
+
+  character.style.left = pos.left + 'px';
+  character.style.top = pos.top + 'px';
+
+  preloadImages(() => {
+    updateSprite();
+    startIdleLoop();
+  });
+</script>
+
 </body>
 </html>
