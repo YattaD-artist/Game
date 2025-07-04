@@ -1,4 +1,3 @@
-Cập nhật vào đây
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -28,23 +27,33 @@ Cập nhật vào đây
   <img id="character" src="Vydra/Idle/Idle00.png" alt="Vydra" />
 
 <script>
-  let moveInterrupt = false;
-
   const character = document.getElementById('character');
   const frameSize = 62;
-  let pos = { top: 100, left: 100 };
+  let pos = { x: 100, y: 100 };
   let direction = '';
   let moveFrame = 0;
   let idleFrame = 0;
-  let isMoving = false;
   let state = 'idle';
   let spacePressed = false;
+  let lastDirection = '';
+  const keysHeld = new Set();
+
+  const speedPerFrame = {
+    walk: 2, // pixel/frame
+    run: 4
+  };
+
+  const frameRates = {
+    idle: 200,
+    walk: 100,
+    run: 80
+  };
 
   const keyToVector = {
     'ArrowUp':    { dx: 0, dy: -1, dir: 'U' },
-    'ArrowDown':  { dx: 0, dy: 1, dir: '' },
+    'ArrowDown':  { dx: 0, dy: 1,  dir: '' },
     'ArrowLeft':  { dx: -1, dy: 0, dir: 'L' },
-    'ArrowRight': { dx: 1, dy: 0, dir: 'R' }
+    'ArrowRight': { dx: 1, dy: 0,  dir: 'R' }
   };
 
   const preloadImages = (callback) => {
@@ -79,99 +88,88 @@ Cập nhật vào đây
     character.src = `Vydra/${folder}/${baseName}${frameStr}.png`;
   };
 
-  const moveCharacter = (dx, dy, newState, newDirection) => {
-    if (isMoving) return;
-    isMoving = true;
-    state = newState;
-    direction = newDirection;
-    moveFrame = 0;
+  // Update loop
+  let lastFrameTime = 0;
+  let animTimer = 0;
 
-    const steps = (newState === 'run') ? 8 : 16;
-    const speed = (newState === 'run') ? 25 : 20; // 👈 Walk nhanh hơn 50%
-    const stepX = (dx * frameSize) / steps;
-    const stepY = (dy * frameSize) / steps;
+  const gameLoop = (timestamp) => {
+    const delta = timestamp - lastFrameTime;
+    lastFrameTime = timestamp;
+    animTimer += delta;
 
-    let currentStep = 0;
+    let moved = false;
+    let dx = 0, dy = 0;
 
-    const step = () => {
-      if (moveInterrupt) {
-        isMoving = false;
-        moveInterrupt = false;
-        state = 'idle';
-        updateSprite();
-        return;
+    // Xác định hướng đang giữ
+    for (let key of keysHeld) {
+      if (keyToVector[key]) {
+        const vec = keyToVector[key];
+        dx = vec.dx;
+        dy = vec.dy;
+        direction = vec.dir;
+        lastDirection = direction;
+        moved = true;
+        break; // Ưu tiên 1 phím duy nhất nếu giữ nhiều
       }
+    }
 
-      if (currentStep >= steps) {
-        isMoving = false;
-        state = 'idle';
+    if (moved) {
+      state = spacePressed ? 'run' : 'walk';
+      const speed = speedPerFrame[state];
+      pos.x += dx * speed;
+      pos.y += dy * speed;
+      character.style.left = pos.x + 'px';
+      character.style.top = pos.y + 'px';
+
+      const frameInterval = frameRates[state];
+      if (animTimer >= frameInterval) {
+        moveFrame++;
         updateSprite();
-        return;
+        animTimer = 0;
       }
-
-      pos.left += stepX;
-      pos.top += stepY;
-      character.style.left = pos.left + 'px';
-      character.style.top = pos.top + 'px';
-      moveFrame++;
-      updateSprite();
-      currentStep++;
-      setTimeout(step, speed);
-    };
-
-    step();
-  };
-
-  const startNewMove = (dx, dy, mode, dir) => {
-    moveCharacter(dx, dy, mode, dir);
-  };
-
-  let idleInterval;
-  const startIdleLoop = () => {
-    idleInterval = setInterval(() => {
-      if (!isMoving && state === 'idle') {
+    } else {
+      state = 'idle';
+      direction = lastDirection;
+      if (animTimer >= frameRates.idle) {
         idleFrame = (idleFrame + 1) % 16;
         updateSprite();
+        animTimer = 0;
       }
-    }, 200);
+    }
+
+    requestAnimationFrame(gameLoop);
   };
 
-  window.addEventListener('keydown', function(e) {
+  window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
       spacePressed = true;
     }
 
-    if (!(e.key in keyToVector)) return;
-    e.preventDefault();
-
-    const { dx, dy, dir } = keyToVector[e.key];
-    const mode = spacePressed ? 'run' : 'walk';
-
-    if (isMoving) {
-      moveInterrupt = true;
-      setTimeout(() => {
-        startNewMove(dx, dy, mode, dir);
-      }, 10);
-    } else {
-      moveCharacter(dx, dy, mode, dir);
+    if (keyToVector[e.key]) {
+      keysHeld.add(e.key);
+      e.preventDefault();
     }
   });
 
-  window.addEventListener('keyup', function(e) {
+  window.addEventListener('keyup', (e) => {
     if (e.code === 'Space') {
       spacePressed = false;
     }
+
+    if (keyToVector[e.key]) {
+      keysHeld.delete(e.key);
+      e.preventDefault();
+    }
   });
 
-  character.style.left = pos.left + 'px';
-  character.style.top = pos.top + 'px';
+  character.style.left = pos.x + 'px';
+  character.style.top = pos.y + 'px';
 
   preloadImages(() => {
     updateSprite();
-    startIdleLoop();
+    requestAnimationFrame(gameLoop);
   });
 </script>
-
 
 </body>
 </html>
