@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Arrow Game</title>
+  <style>
+    #character {
+      width: 50px;
+      height: 50px;
+      background: red;
+      position: absolute;
+      top: 100px;
+      left: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div id="character"></div>
+
+  <script>
+    const character = document.getElementById('character');
+    let pos = { top: 100, left: 100 };
+
+    window.addEventListener('keydown', function(e) {
+      switch (e.key) {
+        case 'ArrowUp':    pos.top -= 10; e.preventDefault(); break;
+        case 'ArrowDown':  pos.top += 10; e.preventDefault(); break;
+        case 'ArrowLeft':  pos.left -= 10; e.preventDefault(); break;
+        case 'ArrowRight': pos.left += 10; e.preventDefault(); break;
+      }
+      character.style.top = pos.top + 'px';
+      character.style.left = pos.left + 'px';
+    });
+  </script>
+</body>
+</html>
